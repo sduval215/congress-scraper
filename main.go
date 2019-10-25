@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gocolly/colly"
 )
@@ -19,8 +20,18 @@ func generateMemberTextFile() {
 	c.OnHTML("tbody tr", func(e *colly.HTMLElement) {
 		// save data rows to tableData variable
 		var tableData string = e.ChildText("td")
-		// TODO: format this data and save it to a file
-		fmt.Println(tableData)
+		// only handle data that exists
+		if len(tableData) > 0 {
+			// format tableData to member information and member id
+			s := strings.SplitAfter(tableData, ")")
+			// save member and id to variables
+			member, id := s[0], s[1]
+
+			// TODO: FORMAT MEMBER INFORMATION TO FIRSTNAME-LASTNAME FORMAT
+			fmt.Printf("Member: %s \n", member)
+			// TODO: SAVE ID TO FILE
+			fmt.Printf("Member ID: %s \n", id)
+		}
 	})
 
 	// error handler
