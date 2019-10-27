@@ -7,6 +7,30 @@ import (
 	"github.com/gocolly/colly"
 )
 
+// format member data to firstName-lastName format
+func formatMemberData(memberData string) string {
+	// initial split of data (remove district)
+	s1 := strings.Split(memberData, "(")
+	// save rawName to variable
+	rawName := s1[0]
+	// secondary split of data (isolate first and last name)
+	s2 := strings.Split(rawName, ",")
+	// set initial format layout
+	firstName, lastName := s2[1], s2[0]
+	// secondary format for first name if it includes dotted abbreviation
+	if strings.Contains(firstName, ".") {
+		s3 := strings.Split(firstName, ".")
+		firstName = s3[0][:len(s3[0])-2]
+	}
+	// tertiary format for last name if it includes two last names
+	if strings.Contains(lastName, " ") {
+		s4 := strings.Split(lastName, " ")
+		lastName = s4[0] + "-" + s4[1]
+	}
+	// return formatted string
+	return strings.ToLower(firstName + "-" + lastName)
+}
+
 // Scrape member bioguide for formatted member name (firstName-lastName) and member id
 func generateMemberTextFile() {
 	// set URL
@@ -27,8 +51,9 @@ func generateMemberTextFile() {
 			// save member and id to variables
 			member, id := s[0], s[1]
 
+			memberName := formatMemberData(member)
 			// TODO: FORMAT MEMBER INFORMATION TO FIRSTNAME-LASTNAME FORMAT
-			fmt.Printf("Member: %s \n", member)
+			fmt.Printf("Member: %s \n", memberName)
 			// TODO: SAVE ID TO FILE
 			fmt.Printf("Member ID: %s \n", id)
 		}
