@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
+	"log"
+	"os"
 	"strings"
 
 	"github.com/gocolly/colly"
@@ -33,13 +36,23 @@ func returnFormattedName(memberData string) string {
 }
 
 // Scrape member bioguide for formatted member name (firstName-lastName) and member id
-func generateMemberTextFile() {
+func generateMemberCSVFile() {
 	// set URL
 	var url string = "https://www.congress.gov/help/field-values/member-bioguide-ids"
 	// set colly object
 	c := colly.NewCollector()
-
-	c.DetectCharset = true
+	// create file
+	file, err := os.Create("member_data.csv")
+	// handle error by logging and closing file
+	if err != nil {
+		log.Fatalf("Something went wrong: %q", err)
+		defer file.Close()
+	}
+	// save writer to variable
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+	// write initial headeer for member-name and member-id columns
+	writer.Write([]string{"member-name", "member-id"})
 
 	// read table values
 	c.OnHTML("tbody tr", func(e *colly.HTMLElement) {
@@ -50,18 +63,14 @@ func generateMemberTextFile() {
 
 		// only handle data that exists
 		if len(rawMemberData) > 0 && len(memberID) > 0 {
-
 			// isolate member Data
 			s := strings.SplitAfter(rawMemberData, "(")
 			// save member and id to variables
 			rawMemberName := s[0][:len(s[0])-2]
 			// return formatted member name to variable
 			memberName := returnFormattedName(rawMemberName)
-
-			fmt.Printf("Member: %s \n", memberName)
-			fmt.Printf("Member ID: %s \n", memberID)
-
-			// TODO: Save data to file
+			// write to csv file
+			writer.Write([]string{memberName, memberID})
 		}
 	})
 
@@ -70,15 +79,12 @@ func generateMemberTextFile() {
 		fmt.Printf("Error reading URL: %s, failed with response: %q \n", r.Request.URL, err)
 	})
 
-	// on request handler
-	c.OnRequest(func(r *colly.Request) {
-		fmt.Printf("Visiting %q \n", r.URL.String())
-	})
-
 	// visit URL
 	c.Visit(url)
 }
 
 func main() {
-	generateMemberTextFile()
+	log.Println("Creating csv file.")
+	generateMemberCSVFile()
+	log.Println("Finished writing to csv file.")
 }
