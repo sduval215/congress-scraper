@@ -8,24 +8,25 @@ import (
 )
 
 // format member data to firstName-lastName format
-func formatMemberData(memberData string) string {
-	// initial split of data (remove district)
-	s1 := strings.Split(memberData, "(")
-	// save rawName to variable
-	rawName := s1[0]
-	// secondary split of data (isolate first and last name)
-	s2 := strings.Split(rawName, ",")
-	// set initial format layout
-	firstName, lastName := s2[1], s2[0]
+func returnFormattedName(memberData string) string {
+	// split by comma separator
+	s1 := strings.Split(memberData, ", ")
+	// get firstName and lastName variables from split
+	firstName, lastName := s1[1], s1[0]
 	// secondary format for first name if it includes dotted abbreviation
-	if strings.Contains(firstName, ".") {
-		s3 := strings.Split(firstName, ".")
-		firstName = s3[0][:len(s3[0])-2]
+	if strings.Contains(firstName, " ") {
+		s2 := strings.Split(firstName, " ")
+		firstName = s2[0]
 	}
-	// tertiary format for last name if it includes two last names
+	// tertiary format for users with two last names
 	if strings.Contains(lastName, " ") {
-		s4 := strings.Split(lastName, " ")
-		lastName = s4[0] + "-" + s4[1]
+		s3 := strings.Split(lastName, " ")
+		lastName = s3[0] + "-" + s3[1]
+	}
+	// quaternary format for users with abbreviated first names
+	if strings.Contains(firstName, ".") {
+		s4 := strings.Split(firstName, ".")
+		firstName = s4[0]
 	}
 	// return formatted string
 	return strings.ToLower(firstName + "-" + lastName)
@@ -42,20 +43,25 @@ func generateMemberTextFile() {
 
 	// read table values
 	c.OnHTML("tbody tr", func(e *colly.HTMLElement) {
-		// save data rows to tableData variable
-		var tableData string = e.ChildText("td")
-		// only handle data that exists
-		if len(tableData) > 0 {
-			// format tableData to member information and member id
-			s := strings.SplitAfter(tableData, ")")
-			// save member and id to variables
-			member, id := s[0], s[1]
 
-			memberName := formatMemberData(member)
-			// TODO: FORMAT MEMBER INFORMATION TO FIRSTNAME-LASTNAME FORMAT
+		// get base member data and member ID
+		var rawMemberData string = e.ChildText("td:first-child")
+		var memberID string = e.ChildText("td:last-child")
+
+		// only handle data that exists
+		if len(rawMemberData) > 0 && len(memberID) > 0 {
+
+			// isolate member Data
+			s := strings.SplitAfter(rawMemberData, "(")
+			// save member and id to variables
+			rawMemberName := s[0][:len(s[0])-2]
+			// return formatted member name to variable
+			memberName := returnFormattedName(rawMemberName)
+
 			fmt.Printf("Member: %s \n", memberName)
-			// TODO: SAVE ID TO FILE
-			fmt.Printf("Member ID: %s \n", id)
+			fmt.Printf("Member ID: %s \n", memberID)
+
+			// TODO: Save data to file
 		}
 	})
 
